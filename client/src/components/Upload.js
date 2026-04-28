@@ -19,7 +19,7 @@ const Upload = () => {
 
     const selectedFile = e.target.files[0];
     const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 50 * 1024 * 1024; // Increased to 50MB to match server
 
     if (!allowedTypes.includes(selectedFile.type)) {
       setError('Only PDF, DOCX, and TXT files are allowed.');
@@ -52,11 +52,11 @@ const Upload = () => {
 
       // Better API URL detection:
       // If we are on localhost, use the API_URL env or default to 5000
-      // If we are on a production domain, use the same origin
+      // If we are on a production domain, use the Render backend URL
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const apiUrl = isLocalhost 
-        ? (process.env.REACT_APP_API_URL || 'http://localhost:5000') 
-        : '';
+      const apiUrl = isLocalhost
+        ? (process.env.REACT_APP_API_URL || 'http://localhost:5000')
+        : 'https://edu-hub-backend-evlk.onrender.com';
         
       console.log("Using API URL:", apiUrl || "Same Origin");
         
@@ -208,7 +208,7 @@ const Upload = () => {
                       <label htmlFor="fileInput" className="cursor-pointer">
                         <i className="bi bi-file-earmark-plus fs-2 text-primary"></i>
                         <p className="mb-0 mt-2 fw-semibold">{file ? file.name : 'Click to select PDF, DOCX, or TXT'}</p>
-                        <small className="text-muted">Maximum file size: 10MB</small>
+                        <small className="text-muted">Maximum file size: 50MB</small>
                       </label>
                     </div>
                   </div>
