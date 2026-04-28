@@ -65,36 +65,48 @@ const Upload = () => {
 
       setProgress(40);
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s for larger files
-
-      const uploadResponse = await fetch(`${apiUrl}/api/files/upload`, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-
-      if (!uploadResponse.ok) {
-        let errorMessage = `Server error (${uploadResponse.status})`;
-        try {
-          const errorData = await uploadResponse.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          // Response was not JSON
-          const textError = await uploadResponse.text().catch(() => "");
-          if (textError.includes("<!DOCTYPE html>")) {
-            errorMessage = "Server returned an HTML page (possibly a 404 or crash). Check backend logs.";
-          } else {
-            errorMessage = textError || errorMessage;
+      // Use XMLHttpRequest for real progress tracking
+      const xhr = new XMLHttpRequest();
+      const uploadPromise = new Promise((resolve, reject) => {
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 30) + 40;
+            setProgress(percent);
           }
-        }
-        throw new Error(errorMessage);
-      }
+        });
 
-      const uploadData = await uploadResponse.json();
-      setProgress(70);
+        xhr.addEventListener("load", () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (e) {
+              reject(new Error("Server response was not valid JSON: " + xhr.responseText.substring(0, 100)));
+            }
+          } else {
+            let errorMsg = "Upload failed";
+            try {
+              const data = JSON.parse(xhr.responseText);
+              errorMsg = data.error || errorMsg;
+            } catch (e) {
+              if (xhr.responseText.includes("<!DOCTYPE html>")) {
+                errorMsg = "Server returned HTML instead of JSON. Check backend routing.";
+              } else {
+                errorMsg = xhr.responseText || errorMsg;
+              }
+            }
+            reject(new Error(errorMsg + " (Status: " + xhr.status + ")"));
+          }
+        });
+
+        xhr.addEventListener("error", () => reject(new Error("Network Error during upload")));
+        xhr.addEventListener("abort", () => reject(new Error("Upload timed out or aborted")));
+
+        xhr.open("POST", `${apiUrl}/api/files/upload`);
+        xhr.send(formData);
+      });
+
+      const uploadData = await uploadPromise;
+      setProgress(75);
 
       try {
         await addDoc(collection(db, 'resources'), {

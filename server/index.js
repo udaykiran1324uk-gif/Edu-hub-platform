@@ -186,14 +186,25 @@ app.get('/', (req, res) => {
 });
 
 // Serve Static Files from React in Production (After API routes)
-const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-app.use(express.static(clientBuildPath));
-
-// All other GET requests not handled before will return the React app
-// Using Express 5 compatible catch-all syntax
-app.get('/:any*', (req, res) => {
-  res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
+// On Render, we copy client/build to server/public
+const publicPath = path.join(__dirname, 'public');
+if (fs.existsSync(publicPath)) {
+  app.use(express.static(publicPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+} else {
+  // Fallback for local development where build might be in ../client/build
+  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+  app.use(express.static(clientBuildPath));
+  app.get('*', (req, res) => {
+    if (fs.existsSync(path.join(clientBuildPath, 'index.html'))) {
+      res.sendFile(path.join(clientBuildPath, 'index.html'));
+    } else {
+      res.send('Study Resource Sharing Platform API is live. (Frontend build not found)');
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
