@@ -50,7 +50,11 @@ const Upload = () => {
       setUploading(true);
       setProgress(20);
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      // Dynamically determine API URL: use same origin in production, or localhost in dev
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '' 
+        : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
+        
       const formData = new FormData();
       formData.append('file', file);
 

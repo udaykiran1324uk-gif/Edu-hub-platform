@@ -46,8 +46,12 @@ const upload = multer({
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-app.get('/', (req, res) => {
-  res.send('Study Resource Sharing Platform Backend is running.');
+// Serve Static Files from React in Production
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+app.use(express.static(clientBuildPath));
+
+app.get('/api/health', (req, res) => {
+  res.send('Study Resource Sharing Platform Backend is healthy.');
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
@@ -174,6 +178,11 @@ app.delete('/api/files/delete', async (req, res) => {
     console.error('File delete error:', error);
     return res.status(500).json({ error: 'Failed to delete file.' });
   }
+});
+
+// All other GET requests not handled before will return the React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 
 app.listen(PORT, () => {
