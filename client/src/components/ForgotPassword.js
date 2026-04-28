@@ -5,11 +5,15 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
 
 const ForgotPassword = () => {
-  const [step, setStep] = useState(1); // 1: Mobile, 2: OTP, 3: Send Reset Link
+  const [step, setStep] = useState(1); // 1: Mobile, 2: OTP, 3: New Password
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetUid, setResetUid] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -27,7 +31,7 @@ const ForgotPassword = () => {
       }
 
       const nextOtp = String(Math.floor(100000 + Math.random() * 900000));
-      setResetEmail(querySnapshot.docs[0].data().email);
+      setResetUid(querySnapshot.docs[0].id);
       setGeneratedOtp(nextOtp);
       alert(`Mock OTP sent to ${mobile}: ${nextOtp}`);
       setStep(2);
@@ -49,11 +53,32 @@ const ForgotPassword = () => {
     e.preventDefault();
     setError('');
 
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     try {
       setLoading(true);
-      await sendPasswordResetEmail(auth, resetEmail);
-      alert(`OTP Verified! A secure password reset link has been sent to your email: ${resetEmail}. Please follow the link to set your new password.`);
-      navigate('/login');
+      
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? '' 
+        : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
+
+      const response = await fetch(`${apiUrl}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: resetUid, newPassword })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Password updated successfully! You can now login with your new password.');
+        navigate('/login');
+      } else {
+        setError(data.error || 'Failed to update password.');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -68,7 +93,7 @@ const ForgotPassword = () => {
           <div className="card shadow-lg border-0 rounded-4">
             <div className="card-body p-4">
               <h3 className="text-center fw-bold mb-4">Reset Password</h3>
-              {error && <div className="alert alert-danger p-2 small">{error}</div>}
+              {error && <div className="alert alert-danger p-2 small text-center">{error}</div>}
 
               {step === 1 && (
                 <form onSubmit={handleMobileSubmit}>
@@ -110,15 +135,57 @@ const ForgotPassword = () => {
 
               {step === 3 && (
                 <form onSubmit={handleResetSubmit}>
-                  <div className="alert alert-success small py-3">
+                  <div className="alert alert-success small py-2 mb-3 text-center">
                     <i className="bi bi-check-circle-fill me-2"></i>
-                    OTP Verified Successfully!
+                    OTP Verified! Set New Password
                   </div>
-                  <p className="text-muted small mb-4">
-                    Click the button below to receive a secure link on your registered email <strong>{resetEmail}</strong> to reset your password.
-                  </p>
+                  
+                  <div className="mb-3">
+                    <label className="form-label small fw-semibold">New Password</label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0"><i className="bi bi-lock"></i></span>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className="form-control bg-light border-start-0 border-end-0"
+                        placeholder="New Password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                      />
+                      <span 
+                        className="input-group-text bg-light border-start-0 cursor-pointer" 
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="form-label small fw-semibold">Confirm Password</label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0"><i className="bi bi-shield-check"></i></span>
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        className="form-control bg-light border-start-0 border-end-0"
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                      <span 
+                        className="input-group-text bg-light border-start-0 cursor-pointer" 
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <i className={`bi bi-eye${showConfirmPassword ? '-slash' : ''}`}></i>
+                      </span>
+                    </div>
+                  </div>
+
                   <button type="submit" className="btn btn-primary w-100 fw-bold rounded-3" disabled={loading}>
-                    {loading ? 'Sending...' : 'Send Reset Email'}
+                    {loading ? 'Updating...' : 'Update Password'}
                   </button>
                 </form>
               )}

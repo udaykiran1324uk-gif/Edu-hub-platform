@@ -2,6 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 
+const getApiCandidates = () => {
+  const fromEnv = process.env.REACT_APP_API_URL;
+  const sameOrigin = window.location.origin;
+  const currentHost = `${window.location.protocol}//${window.location.hostname}`;
+
+  return [fromEnv, sameOrigin, `${currentHost}:5000`]
+    .filter(Boolean);
+};
+
+const deleteFromAvailableApi = async (payload) => {
+  const candidates = getApiCandidates();
+
+  for (const apiUrl of candidates) {
+    try {
+      const response = await fetch(`${apiUrl}/api/files/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) return;
+    } catch (error) {
+      // Try next
+    }
+  }
+};
+
 const Admin = () => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +49,14 @@ const Admin = () => {
   const handleDelete = async (resource) => {
     if (window.confirm(`Are you sure you want to delete "${resource.title}"?`)) {
       try {
+        if (resource.storageType && resource.storagePath) {
+          await deleteFromAvailableApi({
+            storageType: resource.storageType,
+            storagePath: resource.storagePath,
+          });
+        }
         await deleteDoc(doc(db, 'resources', resource.id));
-        alert('Resource deleted successfully.');
+        alert('Resource and file deleted successfully.');
       } catch (error) {
         console.error("Error deleting resource: ", error);
         alert('Failed to delete resource.');

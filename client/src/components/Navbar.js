@@ -7,8 +7,17 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 const Navbar = () => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/browse?search=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -64,6 +73,22 @@ const Navbar = () => {
               </li>
             )}
           </ul>
+
+          <form className="d-flex mx-auto col-lg-4 mb-3 mb-lg-0" onSubmit={handleSearch}>
+            <div className="input-group input-group-sm">
+              <input 
+                className="form-control bg-light border-0 rounded-start-pill ps-3" 
+                type="search" 
+                placeholder="Search resources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button className="btn btn-primary rounded-end-pill px-3" type="submit">
+                <i className="bi bi-search"></i>
+              </button>
+            </div>
+          </form>
+
           <div className="d-flex align-items-center gap-3">
             {user ? (
               <div className="dropdown">
