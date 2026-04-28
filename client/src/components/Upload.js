@@ -59,10 +59,17 @@ const Upload = () => {
       formData.append('file', file);
 
       setProgress(40);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const uploadResponse = await fetch(`${apiUrl}/api/files/upload`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!uploadResponse.ok) {
         let errorMessage = `Server error (${uploadResponse.status})`;
@@ -82,26 +89,35 @@ const Upload = () => {
       }
 
       const uploadData = await uploadResponse.json();
-
       setProgress(70);
 
-      await addDoc(collection(db, 'resources'), {
-        title,
-        subject,
-        description,
-        fileUrl: uploadData.fileUrl,
-        fileName: uploadData.fileName,
-        storageType: uploadData.storageType || 'local',
-        storagePath: uploadData.storagePath || uploadData.fileName,
-        uploader: auth.currentUser.email,
-        uploaderId: auth.currentUser.uid,
-        createdAt: serverTimestamp(),
-      });
+      try {
+        await addDoc(collection(db, 'resources'), {
+          title,
+          subject,
+          description,
+          fileUrl: uploadData.fileUrl,
+          fileName: uploadData.fileName,
+          storageType: uploadData.storageType || 'local',
+          storagePath: uploadData.storagePath || uploadData.fileName,
+          uploader: auth.currentUser.email,
+          uploaderId: auth.currentUser.uid,
+          createdAt: serverTimestamp(),
+        });
+      } catch (firestoreErr) {
+        console.error("Firestore save error:", firestoreErr);
+        throw new Error(`File uploaded to server, but failed to save to database: ${firestoreErr.message}. Check your Firebase permissions.`);
+      }
 
       const userRef = doc(db, "users", auth.currentUser.uid);
-      await updateDoc(userRef, {
-        points: increment(10)
-      });
+      try {
+        await updateDoc(userRef, {
+          points: increment(10)
+        });
+      } catch (pointErr) {
+        console.warn("Points update failed:", pointErr.message);
+        // Don't throw here, the file is already in the database
+      }
 
       setProgress(100);
       alert('Resource uploaded successfully! +10 Points earned.');
