@@ -37,6 +37,14 @@ try {
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ limit: '10mb' }));
+
+// Set request timeouts to handle large file uploads
+app.use((req, res, next) => {
+  req.setTimeout(120000); // 2 minutes for the request
+  res.setTimeout(120000); // 2 minutes for the response
+  next();
+});
 
 // Use Memory Storage for multer to upload directly to Firebase
 const upload = multer({

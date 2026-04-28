@@ -7,11 +7,8 @@
     "server": "cd server && npm start",
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm install && cd client && npm install && npm run build && cd .. && node -e \"const fs=require('fs'); if(fs.existsSync('server/public')) fs.rmSync('server/public', {recursive:true}); fs.mkdirSync('server/public', {recursive:true}); const ncp=require('child_process'); if(process.platform==='win32') { ncp.execSync('xcopy /E /I /Y \\\"client\\\\build\\\\*\\\" \\\"server\\\\public\\\\\\\"'); } else { ncp.execSync('cp -r client/build/* server/public/'); }\"",
+    "build": "npm install && cd client && npm install && npm run build && cd ../server && npm install",
     "start": "node server/index.js"
-  },
-  "engines": {
-    "node": "20.x"
   },
   "dependencies": {
     "concurrently": "^8.2.2",
