@@ -180,10 +180,9 @@ app.delete('/api/files/delete', async (req, res) => {
   }
 });
 
-// All other GET requests not handled before will return the React app
-// Using Express 5 compatible catch-all syntax
-app.get('/:any*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
+// Root Health Check
+app.get('/', (req, res) => {
+  res.send('Edu-hub API is running!');
 });
 
 app.listen(PORT, () => {
