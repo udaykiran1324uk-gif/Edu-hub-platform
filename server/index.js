@@ -46,10 +46,6 @@ const upload = multer({
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Serve Static Files from React in Production
-const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-app.use(express.static(clientBuildPath));
-
 app.get('/api/health', (req, res) => {
   res.send('Study Resource Sharing Platform Backend is healthy.');
 });
@@ -180,9 +176,19 @@ app.delete('/api/files/delete', async (req, res) => {
   }
 });
 
-// Root Health Check
+// Root Health Check / Landing
 app.get('/', (req, res) => {
-  res.send('Edu-hub API is running!');
+  res.send('Study Resource Sharing Platform API is live.');
+});
+
+// Serve Static Files from React in Production (After API routes)
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+app.use(express.static(clientBuildPath));
+
+// All other GET requests not handled before will return the React app
+// Using Express 5 compatible catch-all syntax
+app.get('/:any*', (req, res) => {
+  res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
 app.listen(PORT, () => {
