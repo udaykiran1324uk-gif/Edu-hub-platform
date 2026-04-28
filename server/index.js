@@ -78,9 +78,12 @@ app.post('/api/auth/reset-password', async (req, res) => {
 });
 
 app.post('/api/files/upload', upload.single('file'), async (req, res) => {
+  console.log("Upload request received");
   if (!req.file) {
+    console.log("No file in request");
     return res.status(400).json({ error: 'File is required.' });
   }
+  console.log("File received:", req.file.originalname, "Size:", req.file.size);
 
   const handleLocalFallback = () => {
     // Fallback to local storage
@@ -108,6 +111,7 @@ app.post('/api/files/upload', upload.single('file'), async (req, res) => {
     return handleLocalFallback();
   }
 
+  console.log("Attempting Firebase Storage upload...");
   try {
     const fileName = `resources/${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const file = bucket.file(fileName);
@@ -116,7 +120,7 @@ app.post('/api/files/upload', upload.single('file'), async (req, res) => {
       await file.save(req.file.buffer, {
         metadata: { contentType: req.file.mimetype },
       });
-      console.log("File saved to bucket:", fileName);
+      console.log("File saved to Firebase Storage:", fileName);
 
       try {
         await file.makePublic();

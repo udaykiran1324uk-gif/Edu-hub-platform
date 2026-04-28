@@ -50,10 +50,15 @@ const Upload = () => {
       setUploading(true);
       setProgress(20);
 
-      // Dynamically determine API URL: use same origin in production, or localhost in dev
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? '' 
-        : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
+      // Better API URL detection:
+      // If we are on localhost, use the API_URL env or default to 5000
+      // If we are on a production domain, use the same origin
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const apiUrl = isLocalhost 
+        ? (process.env.REACT_APP_API_URL || 'http://localhost:5000') 
+        : '';
+        
+      console.log("Using API URL:", apiUrl || "Same Origin");
         
       const formData = new FormData();
       formData.append('file', file);
@@ -61,7 +66,7 @@ const Upload = () => {
       setProgress(40);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s for larger files
 
       const uploadResponse = await fetch(`${apiUrl}/api/files/upload`, {
         method: 'POST',
