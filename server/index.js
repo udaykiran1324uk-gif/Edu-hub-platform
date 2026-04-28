@@ -189,9 +189,8 @@ app.get('/', (req, res) => {
 const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
 app.use(express.static(clientBuildPath));
 
-// All other GET requests not handled before will return the React app
-// Catch-all route to serve React app
-app.get('*', (req, res) => {
+// All other requests not handled before will return the React app (SPA fallback)
+app.use((req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 
