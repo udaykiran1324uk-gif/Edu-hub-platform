@@ -181,7 +181,8 @@ app.delete('/api/files/delete', async (req, res) => {
 });
 
 // All other GET requests not handled before will return the React app
-app.get('*', (req, res) => {
+// Using Express 5 compatible catch-all syntax
+app.get('/:any*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'client', 'build', 'index.html'));
 });
 

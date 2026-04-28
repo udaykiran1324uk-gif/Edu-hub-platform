@@ -6,29 +6,23 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const SUBJECTS = ['All', 'Mathematics', 'Science', 'History', 'Engineering', 'Medicine', 'Business', 'Arts', 'Computer Science'];
 
-const getApiCandidates = () => {
-  const fromEnv = process.env.REACT_APP_API_URL;
-  const currentHost = `${window.location.protocol}//${window.location.hostname}`;
-  const sameOrigin = window.location.origin;
-
-  return [fromEnv, `${currentHost}:5000`, `${currentHost}:4547`, `${currentHost}:4321`, sameOrigin]
-    .filter(Boolean);
-};
-
 const deleteFromAvailableApi = async (payload) => {
-  const candidates = getApiCandidates();
+  const apiUrl = process.env.NODE_ENV === 'production' 
+    ? '' 
+    : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
 
-  for (const apiUrl of candidates) {
-    try {
-      await fetch(`${apiUrl}/api/files/delete`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      return;
-    } catch (error) {
-      // Try next API endpoint candidate
+  try {
+    const response = await fetch(`${apiUrl}/api/files/delete`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      console.warn("Delete request failed on server");
     }
+  } catch (error) {
+    console.error("Error connecting to API for delete:", error);
   }
 };
 

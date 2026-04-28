@@ -65,8 +65,20 @@ const Upload = () => {
       });
 
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || `Upload failed with status ${uploadResponse.status}`);
+        let errorMessage = `Server error (${uploadResponse.status})`;
+        try {
+          const errorData = await uploadResponse.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // Response was not JSON
+          const textError = await uploadResponse.text().catch(() => "");
+          if (textError.includes("<!DOCTYPE html>")) {
+            errorMessage = "Server returned an HTML page (possibly a 404 or crash). Check backend logs.";
+          } else {
+            errorMessage = textError || errorMessage;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const uploadData = await uploadResponse.json();

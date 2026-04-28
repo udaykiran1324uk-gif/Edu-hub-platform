@@ -2,29 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 
-const getApiCandidates = () => {
-  const fromEnv = process.env.REACT_APP_API_URL;
-  const sameOrigin = window.location.origin;
-  const currentHost = `${window.location.protocol}//${window.location.hostname}`;
-
-  return [fromEnv, sameOrigin, `${currentHost}:5000`]
-    .filter(Boolean);
-};
-
 const deleteFromAvailableApi = async (payload) => {
-  const candidates = getApiCandidates();
+  const apiUrl = process.env.NODE_ENV === 'production' 
+    ? '' 
+    : (process.env.REACT_APP_API_URL || 'http://localhost:5000');
 
-  for (const apiUrl of candidates) {
-    try {
-      const response = await fetch(`${apiUrl}/api/files/delete`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (response.ok) return;
-    } catch (error) {
-      // Try next
+  try {
+    const response = await fetch(`${apiUrl}/api/files/delete`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      console.warn("Delete request failed on server");
     }
+  } catch (error) {
+    console.error("Error connecting to API for delete:", error);
   }
 };
 
