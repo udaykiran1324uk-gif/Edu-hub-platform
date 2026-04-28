@@ -1,0 +1,15 @@
+{
+  "name": "study-resource-platform",
+  "version": "1.0.0",
+  "description": "Study Resource Sharing Platform",
+  "main": "index.js",
+  "scripts": {
+    "server": "cd server && set PORT=5000 && npm start",
+    "client": "cd client && set PORT=3005 && npm start",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "playwright": "^1.59.1"
+  }
+}

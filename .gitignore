@@ -1,0 +1,10 @@
+node_modules/
+**/.env
+**/.env.local
+**/.env.*
+build/
+dist/
+.DS_Store
+*.png
+verify-features.js
+playwright-test.js
